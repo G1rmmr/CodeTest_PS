@@ -1,62 +1,108 @@
 #include <iostream>
-#include <algorithm>
-#include <vector>
+#include <array>
+#include <string>
+
+struct Coin
+{
+    short Y, X;
+};
+
+static std::array<std::string, 21> gBoard;
+
+static const std::array<short, 4> gDx = {-1, 1, 0, 0};
+static const std::array<short, 4> gDy = {0, 0, -1, 1};
 
 void DFS(
-    const short& N, const short& X,
-    const std::vector<short>& W,
-    int& MaxEnegy)
+    const short& N, const short& M,
+    const Coin& Coin1, const Coin& Coin2,
+    const short& CmdCount, short& MinCmd)
 {
-    if(N == 2)
+    if(CmdCount == 10)
     {
         return;
     }
 
-    int TempEnergy = 0;
-
-    for(int i = 1; i < N; ++i)
+    for(int i = 0; i < 4; ++i)
     {
-        if(X == i)
+        Coin NextPos1 = {
+            static_cast<short>(Coin1.Y + gDy[i]),
+            static_cast<short>(Coin1.X + gDx[i])
+        };
+
+        Coin NextPos2 = {
+            static_cast<short>(Coin2.Y + gDy[i]),
+            static_cast<short>(Coin2.X + gDx[i])
+        };
+
+        if((NextPos1.Y >= 0 && NextPos1.Y < N
+        && NextPos1.X >= 0 && NextPos1.X < M)
+        && (NextPos2.Y >= 0 && NextPos2.Y < N
+        && NextPos2.X >= 0 && NextPos2.X < M))
+        {
+            if(gBoard[NextPos1.Y][NextPos1.X] == '#'
+            && gBoard[NextPos2.Y][NextPos2.X] == '#')
+            {
+                continue;
+            }
+            else if(gBoard[NextPos1.Y][NextPos1.X] == '#')
+            {
+                NextPos1.Y = Coin1.Y;
+                NextPos1.X = Coin1.X;
+            }
+            else if(gBoard[NextPos2.Y][NextPos2.X] == '#')
+            {
+                NextPos2.Y = Coin2.Y;
+                NextPos2.X = Coin2.X;
+            }
+
+            DFS(N, M, NextPos1, NextPos2, CmdCount + 1, MinCmd);
+        }
+        else if((NextPos1.Y < 0 || NextPos1.Y >= N
+        || NextPos1.X < 0 || NextPos1.X >= M)
+        && (NextPos2.Y < 0 || NextPos2.Y >= N
+        || NextPos2.X < 0 || NextPos2.X >= M))
         {
             continue;
         }
-        else if(TempEnergy < W[i - 1] * W[i + 1])
+        else
         {
-            if(i - 1 == X && i > 1)
+            if(MinCmd > CmdCount + 1)
             {
-                TempEnergy = W[i - 2] * W[i + 1];
+                MinCmd = CmdCount + 1;
             }
-            else if(i + 1 == X && i < N - 1)
-            {
-                TempEnergy = W[i - 1] * W[i + 2];
-            }
-            else
-            {
-                TempEnergy = W[i - 1] * W[i + 1];
-            }
-            DFS(N - 1, i, W, TempEnergy);
+            return;
         }
-        MaxEnegy += TempEnergy;
     }
 }
 
 int main()
 {
-    short N = 0;
-    std::cin >> N;
+    short N = 0, M = 0;
+    std::cin >> N >> M;
 
-    std::vector<short> W(N + 1);
+    bool bFlag = false;
+    Coin Coin1 = {0, 0}, Coin2 = {0, 0};
 
-    for(short i = 1; i <= N; ++i)
+    for(short i = 0; i < N; ++i)
     {
-        std::cin >> W[i];
+        std::cin >> gBoard[i];
+
+        for(short j = 0; j < M; ++j)
+        {
+            if(gBoard[i][j] == 'o' && !bFlag)
+            {
+                Coin1.Y = i, Coin1.X = j;
+                bFlag = true;
+            }
+            else if(gBoard[i][j] == 'o' && bFlag)
+            {
+                Coin2.Y = i, Coin2.X = j;
+            }
+        }
     }
+    short MinCmd = 21;
+    DFS(N, M, Coin1, Coin2, 0, MinCmd);
 
-    short X = 0;
-    int MaxEnergy = 0;
-
-    DFS(N, X, W, MaxEnergy);
-
-    std::cout << MaxEnergy;
+    std::cout << (MinCmd == 21 ? -1 : MinCmd);
     return 0;
 }
